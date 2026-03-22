@@ -33,3 +33,9 @@ https://github.com/coreybutler/nvm-windows#readme
 6. Access `http://monolithic-app.test` from your browser
 
 You are setup!
+
+## Documentation API
+
+Pour la documentation complète des endpoints REST (spécifications, exemples de requêtes/réponses, codes HTTP) :
+
+[API_README.md](./API_README.md)
