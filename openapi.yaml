@@ -1,0 +1,360 @@
+openapi: 3.0.3
+
+info:
+  title: Renote API
+  description: API REST de l'application Renote — prise de notes avec tags. Authentification via Laravel Sanctum (token Bearer).
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/api
+    description: Serveur de développement local
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Sanctum
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Jean Dupont
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-03-01T10:00:00.000000Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-03-01T10:00:00.000000Z"
+
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Backend
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-03-01T08:00:00.000000Z"
+
+    Note:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+        text:
+          type: string
+          example: Lire la documentation Laravel
+        tag:
+          $ref: "#/components/schemas/Tag"
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-03-22T14:30:00.000000Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-03-22T14:30:00.000000Z"
+
+    ApiResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success, error]
+        message:
+          type: string
+        data:
+          nullable: true
+
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: The email field is required.
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+paths:
+
+  /auth/login:
+    post:
+      summary: Connexion utilisateur
+      description: Authentifie un utilisateur avec ses identifiants et retourne un token Sanctum.
+      tags:
+        - Authentification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: motdepasse
+      responses:
+        "200":
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: "#/components/schemas/User"
+                          token:
+                            type: string
+                            example: "1|abc123xyz..."
+              example:
+                status: success
+                message: Connexion réussie.
+                data:
+                  user:
+                    id: 1
+                    name: Jean Dupont
+                    email: user@example.com
+                    created_at: "2026-03-01T10:00:00.000000Z"
+                    updated_at: "2026-03-01T10:00:00.000000Z"
+                  token: "1|abc123xyz..."
+        "422":
+          description: Identifiants invalides
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+              example:
+                message: Les identifiants sont incorrects.
+                errors:
+                  email:
+                    - Les identifiants sont incorrects.
+
+  /notes:
+    get:
+      summary: Liste des notes
+      description: Retourne toutes les notes de l'utilisateur authentifié, triées de la plus récente à la plus ancienne. Chaque note inclut son tag.
+      tags:
+        - Notes
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Notes récupérées
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Note"
+              example:
+                status: success
+                message: Notes récupérées.
+                data:
+                  - id: 3
+                    text: Revoir les bases de Docker
+                    tag:
+                      id: 2
+                      name: DevOps
+                      created_at: "2026-03-10T08:00:00.000000Z"
+                    created_at: "2026-03-22T14:30:00.000000Z"
+                    updated_at: "2026-03-22T14:30:00.000000Z"
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              example:
+                message: Unauthenticated.
+
+    post:
+      summary: Créer une note
+      description: Crée une nouvelle note associée à un tag existant pour l'utilisateur authentifié.
+      tags:
+        - Notes
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tag_id
+                - text
+              properties:
+                tag_id:
+                  type: integer
+                  description: ID d'un tag appartenant à l'utilisateur
+                  example: 1
+                text:
+                  type: string
+                  description: Contenu de la note
+                  example: Étudier les middlewares Laravel
+      responses:
+        "201":
+          description: Note créée
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Note"
+              example:
+                status: success
+                message: Note créée.
+                data:
+                  id: 4
+                  text: Étudier les middlewares Laravel
+                  tag:
+                    id: 1
+                    name: Backend
+                    created_at: "2026-03-01T08:00:00.000000Z"
+                  created_at: "2026-03-22T15:00:00.000000Z"
+                  updated_at: "2026-03-22T15:00:00.000000Z"
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              example:
+                message: Unauthenticated.
+        "422":
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+              example:
+                message: The tag_id field is required.
+                errors:
+                  tag_id:
+                    - The tag_id field is required.
+                  text:
+                    - The text field is required.
+
+  /notes/{id}:
+    delete:
+      summary: Supprimer une note
+      description: Supprime la note identifiée par son ID. L'utilisateur authentifié doit en être le propriétaire.
+      tags:
+        - Notes
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identifiant de la note à supprimer
+          schema:
+            type: integer
+            example: 4
+      responses:
+        "200":
+          description: Note supprimée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+              example:
+                status: success
+                message: Note supprimée.
+                data: null
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              example:
+                message: Unauthenticated.
+        "403":
+          description: Accès refusé — la note appartient à un autre utilisateur
+          content:
+            application/json:
+              example:
+                message: Cette note ne vous appartient pas.
+        "404":
+          description: Note introuvable
+          content:
+            application/json:
+              example:
+                message: "No query results for model [App\\Models\\Note] 99"
+
+  /tags:
+    get:
+      summary: Liste des tags
+      description: Retourne tous les tags de l'utilisateur authentifié, triés du plus récent au plus ancien.
+      tags:
+        - Tags
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Tags récupérés
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Tag"
+              example:
+                status: success
+                message: Tags récupérés.
+                data:
+                  - id: 2
+                    name: DevOps
+                    created_at: "2026-03-10T08:00:00.000000Z"
+                  - id: 1
+                    name: Backend
+                    created_at: "2026-03-01T08:00:00.000000Z"
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              example:
+                message: Unauthenticated.
