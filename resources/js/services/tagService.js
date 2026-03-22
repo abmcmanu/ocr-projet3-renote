@@ -1,22 +1,11 @@
-import axios from 'axios';
-
-const BASE_URL = '/api';
-
-function authHeaders() {
-    const token = localStorage.getItem('renote_token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-}
+import http from './http';
 
 export async function getTags() {
-    const response = await axios.get(`${BASE_URL}/tags`, { headers: authHeaders() });
+    const response = await http.get('/tags');
     return response.data.data;
 }
 
 export async function createTag(name) {
-    const response = await axios.post(
-        `${BASE_URL}/tags`,
-        { name },
-        { headers: authHeaders() }
-    );
+    const response = await http.post('/tags', { name });
     return response.data.data;
 }

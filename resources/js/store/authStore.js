@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import { login as apiLogin, logout as apiLogout } from '../services/authService';
 
-const useAuthStore = create((set) => ({
+const useAuthStore = create((set, get) => ({
     user: null,
-    token: null,
+    // Lecture initiale depuis localStorage ici uniquement — aucun autre fichier n'y accède.
+    token: localStorage.getItem('renote_token'),
     loading: false,
     error: null,
 
@@ -21,21 +22,19 @@ const useAuthStore = create((set) => ({
     logout: async () => {
         set({ loading: true, error: null });
         try {
-            await apiLogout();
+            // On passe le token depuis l'état du store (pas de localStorage dans le service).
+            await apiLogout(get().token);
         } catch {
-            // token déjà invalide côté serveur : on nettoie quand même
+            // Token déjà invalide côté serveur : on nettoie quand même.
         } finally {
             localStorage.removeItem('renote_token');
             set({ user: null, token: null, loading: false });
         }
     },
 
-    initFromStorage: () => {
-        const token = localStorage.getItem('renote_token');
-        if (token) {
-            set({ token });
-        }
-    },
+    // Conservé pour la compatibilité API — ne fait plus rien car le token
+    // est déjà initialisé à la création du store.
+    initFromStorage: () => {},
 }));
 
 export default useAuthStore;
