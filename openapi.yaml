@@ -3,11 +3,11 @@ openapi: 3.0.3
 info:
   title: Renote API
   description: API REST de l'application Renote — prise de notes avec tags. Authentification via Laravel Sanctum (token Bearer).
-  version: 1.0.0
+  version: 2.0.0
 
 servers:
-  - url: http://localhost:8000/api
-    description: Serveur de développement local
+  - url: http://localhost/api
+    description: Sail (Docker)
 
 components:
   securitySchemes:
@@ -99,21 +99,71 @@ components:
 
 paths:
 
-  /auth/login:
+  # ── Auth publique ────────────────────────────────────────────────────────
+
+  /auth/register:
     post:
-      summary: Connexion utilisateur
-      description: Authentifie un utilisateur avec ses identifiants et retourne un token Sanctum.
-      tags:
-        - Authentification
+      summary: Inscription
+      description: Crée un nouveau compte utilisateur et retourne un token Sanctum.
+      tags: [Authentification]
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - email
-                - password
+              required: [name, email, password, password_confirmation]
+              properties:
+                name:
+                  type: string
+                  example: Jean Dupont
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: motdepasse
+                password_confirmation:
+                  type: string
+                  format: password
+                  example: motdepasse
+      responses:
+        "201":
+          description: Compte créé
+          content:
+            application/json:
+              example:
+                status: success
+                message: Compte créé avec succès.
+                data:
+                  user:
+                    id: 1
+                    name: Jean Dupont
+                    email: user@example.com
+                    created_at: "2026-03-01T10:00:00.000000Z"
+                    updated_at: "2026-03-01T10:00:00.000000Z"
+                  token: "1|abc123xyz..."
+        "422":
+          description: Validation échouée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+  /auth/login:
+    post:
+      summary: Connexion
+      description: Authentifie un utilisateur et retourne un token Sanctum.
+      tags: [Authentification]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
               properties:
                 email:
                   type: string
@@ -128,19 +178,6 @@ paths:
           description: Connexion réussie
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          user:
-                            $ref: "#/components/schemas/User"
-                          token:
-                            type: string
-                            example: "1|abc123xyz..."
               example:
                 status: success
                 message: Connexion réussie.
@@ -161,15 +198,324 @@ paths:
               example:
                 message: Les identifiants sont incorrects.
                 errors:
-                  email:
-                    - Les identifiants sont incorrects.
+                  email: [Les identifiants sont incorrects.]
+
+  /auth/forgot-password:
+    post:
+      summary: Demande de réinitialisation du mot de passe
+      description: Envoie un lien de réinitialisation par email si le compte existe. Retourne toujours 200 pour ne pas exposer l'existence du compte.
+      tags: [Authentification]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+      responses:
+        "200":
+          description: Lien envoyé (ou compte introuvable — même réponse)
+          content:
+            application/json:
+              example:
+                status: success
+                message: Si ce compte existe, un lien de réinitialisation a été envoyé.
+                data: null
+        "422":
+          description: Email invalide
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+  /auth/reset-password:
+    post:
+      summary: Réinitialisation du mot de passe
+      description: Réinitialise le mot de passe avec le token reçu par email.
+      tags: [Authentification]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, email, password, password_confirmation]
+              properties:
+                token:
+                  type: string
+                  example: abc123token
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: nouveaumotdepasse
+                password_confirmation:
+                  type: string
+                  format: password
+                  example: nouveaumotdepasse
+      responses:
+        "200":
+          description: Mot de passe réinitialisé
+          content:
+            application/json:
+              example:
+                status: success
+                message: passwords.reset
+                data: null
+        "422":
+          description: Token invalide ou expiré
+          content:
+            application/json:
+              example:
+                status: error
+                message: passwords.token
+                data: null
+
+  # ── Auth protégée ────────────────────────────────────────────────────────
+
+  /auth/logout:
+    post:
+      summary: Déconnexion
+      description: Révoque le token Sanctum courant.
+      tags: [Authentification]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Déconnexion réussie
+          content:
+            application/json:
+              example:
+                status: success
+                message: Déconnexion réussie.
+                data: null
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              example:
+                message: Unauthenticated.
+
+  /auth/email/resend:
+    post:
+      summary: Renvoi du lien de vérification email
+      description: Renvoie l'email de vérification à l'utilisateur authentifié.
+      tags: [Authentification]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Lien envoyé
+          content:
+            application/json:
+              example:
+                status: success
+                message: Lien de vérification envoyé.
+                data: null
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              example:
+                message: Unauthenticated.
+
+  # ── Utilisateur ──────────────────────────────────────────────────────────
+
+  /user:
+    get:
+      summary: Profil utilisateur courant
+      description: Retourne les données de l'utilisateur authentifié.
+      tags: [Utilisateur]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Utilisateur récupéré
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/User"
+              example:
+                status: success
+                message: Utilisateur récupéré.
+                data:
+                  id: 1
+                  name: Jean Dupont
+                  email: user@example.com
+                  created_at: "2026-03-01T10:00:00.000000Z"
+                  updated_at: "2026-03-01T10:00:00.000000Z"
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              example:
+                message: Unauthenticated.
+
+    delete:
+      summary: Supprimer le compte
+      description: Supprime le compte de l'utilisateur authentifié et révoque son token. Action irréversible.
+      tags: [Utilisateur]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+                  format: password
+                  example: motdepasse
+      responses:
+        "200":
+          description: Compte supprimé
+          content:
+            application/json:
+              example:
+                status: success
+                message: Compte supprimé.
+                data: null
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              example:
+                message: Unauthenticated.
+        "422":
+          description: Mot de passe incorrect
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+  /user/profile:
+    put:
+      summary: Mettre à jour le profil
+      description: Met à jour le nom et l'email de l'utilisateur authentifié.
+      tags: [Utilisateur]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email]
+              properties:
+                name:
+                  type: string
+                  example: Jean Dupont
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+      responses:
+        "200":
+          description: Profil mis à jour
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/User"
+              example:
+                status: success
+                message: Profil mis à jour.
+                data:
+                  id: 1
+                  name: Jean Dupont
+                  email: user@example.com
+                  created_at: "2026-03-01T10:00:00.000000Z"
+                  updated_at: "2026-03-23T09:00:00.000000Z"
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              example:
+                message: Unauthenticated.
+        "422":
+          description: Validation échouée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+  /user/password:
+    put:
+      summary: Mettre à jour le mot de passe
+      description: Met à jour le mot de passe de l'utilisateur authentifié.
+      tags: [Utilisateur]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, password, password_confirmation]
+              properties:
+                current_password:
+                  type: string
+                  format: password
+                  example: ancienmdp
+                password:
+                  type: string
+                  format: password
+                  example: nouveaumdp
+                password_confirmation:
+                  type: string
+                  format: password
+                  example: nouveaumdp
+      responses:
+        "200":
+          description: Mot de passe mis à jour
+          content:
+            application/json:
+              example:
+                status: success
+                message: Mot de passe mis à jour.
+                data: null
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              example:
+                message: Unauthenticated.
+        "422":
+          description: Mot de passe actuel incorrect ou nouveau invalide
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+  # ── Notes ────────────────────────────────────────────────────────────────
 
   /notes:
     get:
       summary: Liste des notes
       description: Retourne toutes les notes de l'utilisateur authentifié, triées de la plus récente à la plus ancienne. Chaque note inclut son tag.
-      tags:
-        - Notes
+      tags: [Notes]
       security:
         - bearerAuth: []
       responses:
@@ -208,8 +554,7 @@ paths:
     post:
       summary: Créer une note
       description: Crée une nouvelle note associée à un tag existant pour l'utilisateur authentifié.
-      tags:
-        - Notes
+      tags: [Notes]
       security:
         - bearerAuth: []
       requestBody:
@@ -218,9 +563,7 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - tag_id
-                - text
+              required: [tag_id, text]
               properties:
                 tag_id:
                   type: integer
@@ -228,7 +571,6 @@ paths:
                   example: 1
                 text:
                   type: string
-                  description: Contenu de la note
                   example: Étudier les middlewares Laravel
       responses:
         "201":
@@ -269,17 +611,14 @@ paths:
               example:
                 message: The tag_id field is required.
                 errors:
-                  tag_id:
-                    - The tag_id field is required.
-                  text:
-                    - The text field is required.
+                  tag_id: [The tag_id field is required.]
+                  text: [The text field is required.]
 
   /notes/{id}:
     delete:
       summary: Supprimer une note
       description: Supprime la note identifiée par son ID. L'utilisateur authentifié doit en être le propriétaire.
-      tags:
-        - Notes
+      tags: [Notes]
       security:
         - bearerAuth: []
       parameters:
@@ -295,8 +634,6 @@ paths:
           description: Note supprimée
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ApiResponse"
               example:
                 status: success
                 message: Note supprimée.
@@ -308,7 +645,7 @@ paths:
               example:
                 message: Unauthenticated.
         "403":
-          description: Accès refusé — la note appartient à un autre utilisateur
+          description: Accès refusé — note appartenant à un autre utilisateur
           content:
             application/json:
               example:
@@ -320,12 +657,13 @@ paths:
               example:
                 message: "No query results for model [App\\Models\\Note] 99"
 
+  # ── Tags ─────────────────────────────────────────────────────────────────
+
   /tags:
     get:
       summary: Liste des tags
       description: Retourne tous les tags de l'utilisateur authentifié, triés du plus récent au plus ancien.
-      tags:
-        - Tags
+      tags: [Tags]
       security:
         - bearerAuth: []
       responses:
@@ -358,3 +696,57 @@ paths:
             application/json:
               example:
                 message: Unauthenticated.
+
+    post:
+      summary: Créer un tag
+      description: Crée un nouveau tag pour l'utilisateur authentifié.
+      tags: [Tags]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  maxLength: 50
+                  example: DevOps
+      responses:
+        "201":
+          description: Tag créé
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Tag"
+              example:
+                status: success
+                message: Tag créé.
+                data:
+                  id: 3
+                  name: DevOps
+                  created_at: "2026-03-23T09:00:00.000000Z"
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              example:
+                message: Unauthenticated.
+        "422":
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+              example:
+                message: The name field is required.
+                errors:
+                  name: [The name field is required.]

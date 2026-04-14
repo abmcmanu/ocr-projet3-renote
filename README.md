@@ -1,4 +1,6 @@
-# Transformez l'architecture d'une application existante
+# Projet 3 : Transformez l'architecture d'une application existante
+
+Bienvenue dans le dépôt du projet 3  du parcours **Architecte Logiciel**. 
 
 # Plot
 
@@ -10,32 +12,35 @@ In renote, a user can:
 - define tags
 - and associate a tag to a note.
 
-## Install
+## Mission
 
-1. Install Laravel's Herd:
-https://laravel.com/docs/12.x/installation#installation-using-herd
+L’objectif a été de la faire évoluer afin de supporter également les appareils mobiles.
+Concrètement, cela implique :
+● de séparer le back-end du front-end
+● et d’introduire une API, qui pourrait être utilisée non seulement par plusieurs interfaces (web et mobiles), mais aussi, potentiellement, par des services externes.
 
-This will install Php, Composer and Laravel.
+## Présentation de l’existant, analyse et premier essaie de l’architecture cible
 
-2. Install node v22
+![Schéma de l'application Full Stack](https://raw.githubusercontent.com/abmcmanu/ocr-projet3-renote/main/public/archi-overview.png)
+> *Figure 1 : Aperçu de l'architecture existante et évolution cible.*
 
-Install node version manager (MVN).
-On Windows you can use this distribution:
-https://github.com/coreybutler/nvm-windows#readme
+## Présentation de l’architecture cible
 
+![Schéma de l'application Full Stack](https://raw.githubusercontent.com/abmcmanu/ocr-projet3-renote/main/public/archi-cible.png)
+> *Figure 2 : Aperçu de l'architecture cible.*
 
-3. Clone this project
+## ⚙️ Installation et Configuration
 
-4. Run `npm i` and `npm run dev`
+Pour mettre en place l'environnement de développement et lancer le projet localement, veuillez suivre les instructions détaillées dans le fichier suivant :
 
-5. Start Herd
+👉 **[Consulter le guide d'installation (install.md)](./install.md)**
 
-6. Access `http://monolithic-app.test` from your browser
+## 📖 Documentation de l'API
 
-You are setup!
+Pour consulter la documentation complète de l'API REST (spécifications, modèles, structure des réponses et des requêtes) :
 
-## Documentation API
+👉 **[Consulter la documentation REST (API_README.md)](./API_README.md)**
 
-Pour la documentation complète des endpoints REST (spécifications, exemples de requêtes/réponses, codes HTTP) :
+Le schéma OpenAPI standard est également disponible pour intégration (avec Swagger ou Postman par exemple) :
 
-[API_README.md](./API_README.md)
+👉 **[Voir le fichier OpenAPI (openapi.yaml)](./openapi.yaml)**

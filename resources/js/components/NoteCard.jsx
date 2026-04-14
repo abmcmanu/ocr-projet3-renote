@@ -17,7 +17,7 @@
  */
 export default function NoteCard({ note, onDelete }) {
   return (
-    <div className="border p-3 flex justify-between items-start">
+    <div className="border dark:border-zinc-700 p-3 flex justify-between items-start dark:bg-zinc-800">
       <div>
         <p>{note.text}</p>
         <small className="text-gray-500">

@@ -41,7 +41,7 @@ export default function NoteForm({ tags = [], onSubmit, loading = false, message
 
       <form className="space-y-2" onSubmit={handleSubmit}>
         <textarea
-          className="w-full border p-2"
+          className="w-full border dark:border-zinc-700 bg-white dark:bg-zinc-900 dark:text-white p-2 placeholder-zinc-400 dark:placeholder-zinc-500"
           placeholder="Write your note..."
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -49,7 +49,7 @@ export default function NoteForm({ tags = [], onSubmit, loading = false, message
         />
 
         <select
-          className="w-full border p-2"
+          className="w-full border dark:border-zinc-700 bg-white dark:bg-zinc-900 dark:text-white p-2"
           value={tagId}
           onChange={(e) => setTagId(e.target.value)}
         >

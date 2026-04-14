@@ -1,8 +1,7 @@
 /**
- * authService — endpoints publics (login, register) + logout.
- * Utilise axios brut (pas http.js) pour éviter toute dépendance circulaire
- * avec authStore (authStore → authService → http → authStore).
- * Le token de logout est passé en paramètre depuis authStore.
+ * authService — endpoints publics (login, register, forgot/reset password)
+ * + logout et resendVerification (nécessitent un token passé en paramètre).
+ * Utilise axios brut pour éviter toute dépendance circulaire avec authStore.
  */
 import axios from 'axios';
 
@@ -13,9 +12,28 @@ export async function login(email, password) {
     return response.data.data;
 }
 
-export async function register(name, email, password) {
-    const response = await axios.post(`${BASE_URL}/auth/register`, { name, email, password });
+export async function register(name, email, password, password_confirmation) {
+    const response = await axios.post(`${BASE_URL}/auth/register`, { name, email, password, password_confirmation });
     return response.data.data;
+}
+
+export async function forgotPassword(email) {
+    const response = await axios.post(`${BASE_URL}/auth/forgot-password`, { email });
+    return response.data;
+}
+
+export async function resetPassword(token, email, password, password_confirmation) {
+    const response = await axios.post(`${BASE_URL}/auth/reset-password`, { token, email, password, password_confirmation });
+    return response.data;
+}
+
+export async function resendVerification(token) {
+    const response = await axios.post(
+        `${BASE_URL}/auth/email/resend`,
+        {},
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+    );
+    return response.data;
 }
 
 export async function logout(token) {

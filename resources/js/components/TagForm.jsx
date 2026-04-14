@@ -42,7 +42,7 @@ export default function TagForm({ onSubmit, loading = false, message = null, err
       <form className="space-y-2" onSubmit={handleSubmit}>
         <input
           type="text"
-          className="border rounded px-3 py-1 text-sm w-full"
+          className="border dark:border-zinc-700 bg-white dark:bg-zinc-900 dark:text-white rounded px-3 py-1 text-sm w-full placeholder-zinc-400 dark:placeholder-zinc-500"
           placeholder="New tag name"
           value={name}
           onChange={(e) => setName(e.target.value)}
