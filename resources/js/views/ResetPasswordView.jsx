@@ -7,14 +7,14 @@ const inputClass = 'w-full rounded-md border border-zinc-200 dark:border-zinc-70
 const labelClass = 'text-sm font-medium leading-tight text-neutral-900 dark:text-white';
 
 export default function ResetPasswordView() {
-    const [searchParams]                  = useSearchParams();
-    const [email, setEmail]               = useState(searchParams.get('email') ?? '');
-    const [password, setPassword]         = useState('');
+    const [searchParams] = useSearchParams();
+    const [email, setEmail] = useState(searchParams.get('email') ?? '');
+    const [password, setPassword] = useState('');
     const [passwordConf, setPasswordConf] = useState('');
-    const [error, setError]               = useState(null);
-    const [loading, setLoading]           = useState(false);
-    const navigate                        = useNavigate();
-    const token                           = searchParams.get('token') ?? '';
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+    const token= searchParams.get('token') ?? '';
 
     async function handleSubmit(e) {
         e.preventDefault();
