@@ -16,8 +16,8 @@ In renote, a user can:
 
 L’objectif a été de la faire évoluer afin de supporter également les appareils mobiles.
 Concrètement, cela implique :
-● de séparer le back-end du front-end
-● et d’introduire une API, qui pourrait être utilisée non seulement par plusieurs interfaces (web et mobiles), mais aussi, potentiellement, par des services externes.
+- de séparer le back-end du front-end
+- et d’introduire une API, qui pourrait être utilisée non seulement par plusieurs interfaces (web et mobiles), mais aussi, potentiellement, par des services externes.
 
 ## Présentation de l’existant, analyse et premier essaie de l’architecture cible
 
